@@ -2,12 +2,149 @@
 
 class InteractiveSemanticGraph {
 
-	public static function onBeforePageDisplay( $out ) {
-
+	/**
+	 * @param OutputPage $outputPage
+	 * @param Skin $skin
+	 * @return void
+	 */
+	public static function onBeforePageDisplay( $out, $skin ) {
+		$out->addModules( 'ext.MwJson' );
 		$out->addModules( 'ext.InteractiveSemanticGraph' );
 
 		return true;
+	}
 
+	/**
+	 * @param Parser $parser
+	 */
+	public static function onParserFirstCallInit( Parser $parser ) {
+		$parser->setFunctionHook( 'semanticgraph', [ self::class, 'parserFunctionSemanticgraph' ] );
+	}
+
+	/**
+	 * @see https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/extensions/PageProperties/+/c997fbd2583ccc088dc232288f883716ca2f5777/includes/PageProperties.php
+	 * @param Parser $parser
+	 * @param mixed ...$argv
+	 * @return array
+	 */
+	public static function parserFunctionSemanticgraph( Parser $parser, ...$argv ) {
+		$out = $parser->getOutput();
+		$title = $parser->getTitle();
+
+/*
+{{#semanticgraph:
+root=TestPage
+|properties=HasProperty1,HasProperty2
+|permalink=false
+|autoexpand=false
+|depth=3
+}}
+*/
+		$defaultParameters = [
+			'root' => [ '', 'string' ],
+			'properties' => [ '', 'array' ],
+			'permalink' => [ 'false', 'boolean' ],
+			'autoexpand' => [ 'false', 'boolean' ],
+			'depth' => [ '3', 'integer' ],
+		];
+
+		[ $values, $params ] = self::parseParameters( $argv, array_keys( $defaultParameters ) );
+
+		$params = self::applyDefaultParams( $defaultParameters, $params );
+
+		$out->setExtensionData( 'semanticgraph', $params );
+	}
+	
+	/**
+	 * @see https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/extensions/PageProperties/+/c997fbd2583ccc088dc232288f883716ca2f5777/includes/PageProperties.php
+	 * @param OutputPage $out
+	 * @param ParserOutput $parserOutput
+	 * @return void
+	 */
+	public static function onOutputPageParserOutput( OutputPage $out, ParserOutput $parserOutput ) {
+		$data = $parserOutput->getExtensionData( 'semanticgraph' );
+		
+		print_r($data );
+		if ( $data !== null ) {
+			$out->addJsConfigVars( [
+				'semanticgraph' => json_encode( $data )
+			] );
+		}
+	}
+
+	/**
+	 * @see https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/extensions/PageProperties/+/c997fbd2583ccc088dc232288f883716ca2f5777/includes/PageProperties.php
+	 * @param array $defaultParams
+	 * @param array $params
+	 * @return array
+	 */
+	public static function applyDefaultParams( $defaultParams, $params ) {
+		$ret = [];
+		foreach ( $defaultParams as $key => $value ) {
+			[ $defaultValue, $type ] = $value;
+			$val = $defaultValue;
+			if ( array_key_exists( $key, $params ) ) {
+				$val = $params[$key];
+			}
+
+			switch ( $type ) {
+				case 'bool':
+				case 'boolean':
+					$val = filter_var( $val, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+					if ( $val === null ) {
+						$val = filter_var( $defaultValue, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+					}
+					settype( $val, "bool" );
+					break;
+
+				case 'array':
+					$val = array_filter(
+						preg_split( '/\s*,\s*/', $val, -1, PREG_SPLIT_NO_EMPTY ) );
+					break;
+
+				case 'number':
+					$val = filter_var( $val, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE );
+					settype( $val, "float" );
+					break;
+
+				case 'int':
+				case 'integer':
+					$val = filter_var( $val, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE );
+					settype( $val, "integer" );
+					break;
+
+				default:
+			}
+
+			$ret[$key] = $val;
+		}
+
+		return $ret;
+	}
+
+	/**
+	 * @see https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/extensions/PageProperties/+/c997fbd2583ccc088dc232288f883716ca2f5777/includes/PageProperties.php
+	 * @param array $parameters
+	 * @param array $defaultParameters
+	 * @return array
+	 */
+	public static function parseParameters( $parameters, $defaultParameters ) {
+		$ret = [];
+		$options = [];
+		foreach ( $parameters as $value ) {
+			if ( strpos( $value, '=' ) !== false ) {
+				[ $k, $v ] = explode( '=', $value, 2 );
+				$k = str_replace( ' ', '-', trim( $k ) );
+
+				if ( in_array( $k, $defaultParameters ) ) {
+					$options[$k] = trim( $v );
+					continue;
+				}
+			}
+			$ret[] = $value;
+		}
+
+		return [ $ret, $options ];
 	}
 
 }

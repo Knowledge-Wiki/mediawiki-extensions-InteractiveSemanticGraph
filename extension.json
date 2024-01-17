@@ -12,16 +12,16 @@
     "license-name":"AGPL-3.0-or-later",
     "type":"editor",
     "requires":{
-        "MediaWiki":">= 1.31",
-        "extensions": {
-			"MwJson": ">= 0.2.5"
-		}
+        "MediaWiki":">= 1.31"
     },
     "MessagesDirs":{
         "InteractiveSemanticGraph":[
             "i18n"
         ]
     },
+	"ExtensionMessagesFiles": {
+		"InteractiveSemanticGraphMagic": "InteractiveSemanticGraph.i18n.magic.php"
+	},
     "ResourceModules":{
         "ext.InteractiveSemanticGraph":{
             "localBasePath":"modules/ext.InteractiveSemanticGraph",
@@ -40,12 +40,102 @@
                 "InteractiveSemanticGraph_init.js"
             ],
             "position":"bottom"
-        }
+        },
+        "ext.mwjson":{
+            "localBasePath":"modules/ext.MwJson",
+            "remoteExtPath":"MwJson/modules/ext.MwJson",
+            "styles":[
+                "MwJson.css",
+                "bootstrap.min.css",
+                "fontawesome.min.css",
+                "spectre-icons.min.css"
+            ],
+            "scripts":[
+                "MwJson.js",
+                "bootstrap.min.js"
+            ],
+            "position":"top"
+        },
+        "ext.mwjson.util":{
+            "localBasePath":"modules/ext.MwJson.util",
+            "remoteExtPath":"MwJson/modules/ext.MwJson.util",
+            "scripts":[
+                "lz-string.min.js",
+                "json-schema-ref-parser.js",
+                "jsonpath.min.js",
+                "MwJson_util.js",
+                "MwJson_schema.js",
+                "MwJson_extData.js",
+                "jsonschema-jsonschema.js"
+            ],
+            "dependencies": [
+                "ext.mwjson"
+            ],
+            "position":"bottom"
+        },
+        "ext.mwjson.api":{
+            "localBasePath":"modules/ext.MwJson.api",
+            "remoteExtPath":"MwJson/modules/ext.MwJson.api",
+            "scripts":[
+                "MwJson_api.js"
+            ],
+            "dependencies": [
+                "ext.mwjson.util"
+            ],
+            "position":"bottom"
+        },
+        "ext.mwjson.parser":{
+            "localBasePath":"modules/ext.MwJson.parser",
+            "remoteExtPath":"MwJson/modules/ext.MwJson.parser",
+            "scripts":[
+                "CeJS_wiki.min.js",
+                "MwJson_parser.js"
+            ],
+            "dependencies": [
+                "ext.mwjson.util"
+            ],
+            "position":"bottom"
+        },
+        "ext.mwjson.editor":{
+            "localBasePath":"modules/ext.MwJson.editor",
+            "remoteExtPath":"MwJson/modules/ext.MwJson.editor",
+            "styles":[
+                "autocomplete.min.css",
+                "json-editor.css",
+                "jsoneditor.css"
+            ],
+            "scripts":[
+                "handlebars.min.js",
+                "autocomplete.min.js",
+                "json-editor.min.js",
+                "jsoneditor.min.js",
+                "MwJson_editor.js",
+                "MwJson_editor_ui.js",
+                "MwJson_editor_init.js"
+            ],
+            "dependencies": [
+                "ext.mwjson.api",
+		        "ext.mwjson.parser"
+            ],
+            "position":"bottom",
+            "messages": [
+                "mwjson-editor-fetch-external-data",
+                "mwjson-editor-fetch-external-data-requires",
+                "mwjson-editor-optional",
+                "mwjson-editor-required",
+                "mwjson-editor-edit-comment-input-label",
+                "mwjson-editor-edit-comment-input-placeholder",
+                "mwjson-editor-edit-comment-input-tooltip"
+            ]
+		}
     },
     "AutoloadClasses":{
         "InteractiveSemanticGraph":"includes/InteractiveSemanticGraph.php"
     },
     "Hooks":{
-        "BeforePageDisplay":"InteractiveSemanticGraph::onBeforePageDisplay"
+        "BeforePageDisplay":"InteractiveSemanticGraph::onBeforePageDisplay",
+		"ParserFirstCallInit": "InteractiveSemanticGraph::onParserFirstCallInit",
+		"OutputPageParserOutput": "InteractiveSemanticGraph::onOutputPageParserOutput"
+
     }
 }
