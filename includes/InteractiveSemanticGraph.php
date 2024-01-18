@@ -2,6 +2,9 @@
 
 class InteractiveSemanticGraph {
 
+	/** @var array */
+	public static $graphs = [];
+
 	/**
 	 * @param OutputPage $outputPage
 	 * @param Skin $skin
@@ -52,7 +55,16 @@ root=TestPage
 
 		$params = self::applyDefaultParams( $defaultParameters, $params );
 
-		$out->setExtensionData( 'semanticgraph', $params );
+		self::$graphs[] = $params;
+
+		$out->setExtensionData( 'semanticgraphs', self::$graphs );
+		
+		return [
+			'<div class="InteractiveSemanticGraph" id="interactivesemanticgraph-wrapper-' . key( self::$graphs ) . '">'
+				. wfMessage( 'interactive-semantic-graph-wrapper-loading' )->text() . '</div>',
+			'noparse' => true,
+			'isHTML' => true
+		];
 	}
 	
 	/**
@@ -62,12 +74,11 @@ root=TestPage
 	 * @return void
 	 */
 	public static function onOutputPageParserOutput( OutputPage $out, ParserOutput $parserOutput ) {
-		$data = $parserOutput->getExtensionData( 'semanticgraph' );
-		
-		print_r($data );
+		$data = $parserOutput->getExtensionData( 'semanticgraphs' );
+
 		if ( $data !== null ) {
 			$out->addJsConfigVars( [
-				'semanticgraph' => json_encode( $data )
+				'semanticgraphs' => json_encode( $data )
 			] );
 		}
 	}
