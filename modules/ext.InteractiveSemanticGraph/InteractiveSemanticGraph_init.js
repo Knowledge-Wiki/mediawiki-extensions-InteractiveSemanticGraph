@@ -15,21 +15,17 @@ $(document).ready(function () {
         $.Deferred(function (deferred) {
             $(deferred.resolve);
         })
-    ).done(function () {
-
+    ).done(function () {    
+		var semanticGraphs = JSON.parse( mw.config.get( 'semanticgraphs' ) );
+	
         $(".InteractiveSemanticGraph").each(function (index) {
-            if ($('.InteractiveSemanticGraph').length) { //check if div element(s) exist
-
-                var defaultOptions = { "root": "", "properties": [], "ignore_properties": [], "permalink": false, "sync_permalink": false, "edit": false, "hint": false, "treat_non_existing_pages_as_literals": false, "edge_labels": true };
-                defaultOptions.legacy_mode = mw.config.get( 'wgPageName' ).split(":")[0] === "Term";
-                var userOptions = {};
-
-                if (this.dataset.config) userOptions = JSON.parse(this.dataset.config);
-                else if (this.innerText !== "") userOptions = JSON.parse(this.innerText); //Legacy support
-                var config = { ...defaultOptions, ...userOptions };
-                config.depth = parseInt(config.depth);
-                var graph = new isg.Graph(this, config);
-            }
+        	var graphData = semanticGraphs[index];
+			var defaultOptions = { "root": "", "properties": [], "ignore_properties": [], "permalink": false, "sync_permalink": false, "edit": false, "hint": false, "treat_non_existing_pages_as_literals": false, "edge_labels": true };
+			defaultOptions.legacy_mode = mw.config.get( 'wgPageName' ).split(":")[0] === "Term";
+		
+			var config = $.extend(defaultOptions, graphData );		
+			var graph = new isg.Graph(this, config);
+	 
         });
     });
 });
